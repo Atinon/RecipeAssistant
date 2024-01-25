@@ -1,4 +1,5 @@
 from rdflib import Graph
+from food_energy_content import IngredientsList as il
 
 
 def process_recipe(g, recipe_uri, include_list, exclude_list):
@@ -71,20 +72,35 @@ def process_recipe(g, recipe_uri, include_list, exclude_list):
         if serves:
             print(f"Serves: {serves}")
 
+        total_calories = 0
+
         # Display the list of ingredients
         print("\nIngredients you need:")
         for ingredient in ingredients_list:
-            print(f"- {ingredient}")
+            ingredient_calories = il.IngredientsList.get_calories_info(ingredient)
+            if isinstance(ingredient_calories, int):
+                total_calories += ingredient_calories
+            print(f"- {ingredient}, calories: {ingredient_calories}")
+        print(f"Total calories for this meal: {total_calories}")
 
         if link:
             print(f"\nLink: {link}")
-
-        # print("\n")
         print('----------------------------------------------------------------' * 4)
 
 
 def main():
     g = Graph()  # Initial empty Graph object
+
+    # Load food energy content from file to IngredientsList class
+    file_path = "food_energy_content/base_foods.json"
+    try:
+        il.IngredientsList.open_file(file_path)
+    except FileNotFoundError:
+        print(f"Failed to open ingredients file containing energy values at: {file_path}")
+        exit(1)
+    except il.json.JSONDecodeError:
+        print(f"Error: Failed to decode JSON in '{file_path}'. Please check the file format.")
+        exit(1)
 
     ontology_file_path = "ontology/WhatToMake_Individuals.rdf"
     g.parse(ontology_file_path)
